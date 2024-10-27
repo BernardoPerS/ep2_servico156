@@ -14,10 +14,13 @@
 function selecionar_arquivo {
     echo "Escolha uma opção de arquivo:"
     select arquivocsv in $(basename -a "$diretorio_dados"/*.csv); do
+        # confere se a opção existe, caso não, volta para o menu
         if [ -n "$arquivocsv" ]; then 
             arquivo_atual="$arquivocsv"
             caminho_arquivo_atual="$diretorio_dados/$arquivo_atual"
+            # conta a quantidade de linhas do arquivo_atual (número de reclamações)
             numero_reclamacoes=$(cat $caminho_arquivo_atual | tail -n +2 | wc -l )
+            
             echo "+++ Arquivo atual: $arquivocsv"
             echo "+++ Número de reclamações: $numero_reclamacoes"
             echo "+++++++++++++++++++++++++++++++++++++++"
@@ -58,6 +61,20 @@ function adicionar_filtro_coluna {
     done
     # restaura o separador do select para o padrão (de "\n" para " ")
     IFS=" "
+}
+
+function limpar_filtros_colunas {
+    # atualiza o número de reclamações
+    numero_reclamacoes=$(cat "$diretorio_dados/$arquivo_atual" | tail -n +2 | wc -l )
+    
+    echo "+++ Filtros removidos"
+    echo "+++ Arquivo atual: $arquivo_atual"
+    echo "+++ Número de reclamações: $numero_reclamacoes"
+    echo "+++++++++++++++++++++++++++++++++++++++"
+    echo ""
+
+    # limpa o vetor que armazena os filtros
+    declare -A vetor_filtros=()
 }
 
 ## INÍCIO DO PROGRAMA ##
@@ -190,6 +207,9 @@ while true; do
                 break
             elif [ "$opcao" == "adicionar_filtro_coluna" ]; then
                 adicionar_filtro_coluna
+                break
+            elif [ "$opcao" == "limpar_filtros_colunas" ]; then
+                limpar_filtros_colunas
                 break
             fi
         done
