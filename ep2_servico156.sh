@@ -11,6 +11,21 @@
 
 #!/bin/bash
 
+function selecionar_arquivo {
+    echo "Escolha uma opção de arquivo:"
+    select arquivocsv in $(basename -a "$diretorio_dados"/*.csv); do
+        if [ -n "$arquivocsv" ]; then 
+            arquivo_atual="$arquivocsv"
+            local numero_reclamacoes=$(cat "$diretorio_dados/$arquivo_atual" | tail -n +2 | wc -l )
+            echo ""
+            echo "+++ Arquivo atual: $arquivocsv"
+            echo "+++ Número de reclamações: $numero_reclamacoes"
+            echo "+++++++++++++++++++++++++++++++++++++++"
+            echo ""
+        fi
+        break
+    done
+}
 
 ## INÍCIO DO PROGRAMA ##
 
@@ -19,6 +34,7 @@ echo "+++++++++++++++++++++++++++++++++++++++"
 echo "Este programa mostra estatísticas do"
 echo "Serviço 156 da Prefeitura de São Paulo"
 echo "+++++++++++++++++++++++++++++++++++++++"
+echo ""
 
 
 diretorio_dados="dados"
@@ -66,6 +82,7 @@ if [ $# -gt 0 ]; then
         echo "FINALIZADO --$tempo_final--"
         echo "Tempo total decorrido: $(date -ud "@$periodo" +'%Mm %Ss')"
         echo "Baixados: $quantidade_arquivos, $tamanho_mb"M" em $(date -ud "@$periodo" +'%Mm %Ss') ($velocidade_download MB/s) "
+        echo ""
 
 
         ## MODIFICAÇÃO DOS ARQUIVOS E CRIAÇÃO DO ARQUIVOCOMPLETO.CSV ##
@@ -100,7 +117,9 @@ if [ $# -gt 0 ]; then
 ## MODO DE INICIALIZAÇÃO II ##
 
 else 
+    # verificação se existe o diretório dados e se ele possui realmente algum arquivo
     if [ ! -d "$diretorio_dados" ] || [  $(ls $diretorio_dados | wc -l) -eq 0 ]; then 
+        # mensagem de erro com encerramento do processo
         echo "ERRO: Não há dados baixados."
         echo "Para baixar os dados antes de gerar as estatísticas, use:"
         echo "   ./ep2_servico156.sh <nome do arquivo com URLs de dados do Serviço 156>"
@@ -109,15 +128,37 @@ else
 fi
 
 
+## SISTEMA DE MENUS COM FLUXO CONTÍNUO ##
 
+# variável de estado do programa, para criar que se saiba qual será a próxima etapa do programa
+estado="menu"
+# menu que será usado em um comando select, corpo do menu padrão
+menu_inicial="selecionar_arquivo adicionar_filtro_coluna limpar_filtros_colunas mostrar_duracao_media_reclamacao mostrar_ranking_reclamacoes mostrar_reclamacoes sair"
+# variável que define arquivo atual selecionado, tendo como padrão o arquivo completo
+arquivo_atual="arquivocompleto.csv"
 
+# while que só termina com break ou pelo comando de saída
+while true; do 
 
+    if [ $estado == "menu" ]; then
+        echo "Escolha uma opção de operação:"
 
+        select opcao in $menu_inicial; do
+            echo ""
+            if [ $opcao == "sair" ]; then
+                echo 'Fim do programa'
+                echo "+++++++++++++++++++++++++++++++++++++++"
+                
+                exit 1
+            elif [ $opcao == "selecionar_arquivo" ]; then
+                selecionar_arquivo
+                break
+            fi
+        done
+    fi
+
+done
 
 
 
 exit 1
-
-
-
-
