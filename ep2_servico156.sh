@@ -60,7 +60,8 @@ if [ $# -gt 0 ]; then
         tempo_inicial=$( date +"%Y-%m-%d %H:%M:%S" )
         echo "$tempo_inicial"
         # percorre o arquivo .txt e captura as urls
-        for url in $( cat "$urls_txt" ); do
+        for url in $( cat "$urls_txt"); do
+            url=$(echo "$url" | tr -d '\r')
             wget -nv "$url" -P "$diretorio_dados"
         done 
 
