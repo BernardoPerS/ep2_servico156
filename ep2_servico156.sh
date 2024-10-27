@@ -48,7 +48,8 @@ function adicionar_filtro_coluna {
         
         echo "Escolha uma opção de valor para $coluna:"
         select categoria in $categorias; do
-
+            # criar vetor
+            filtrar
             echo "+++ Adicionado filtro: $coluna = $categoria"
             echo "+++ Arquivo atual: $arquivo_atual"
             echo "+++ Número de reclamações: $numero_reclamacoes"
@@ -90,7 +91,6 @@ function filtrar {
 }
 
 function mostrar_reclamacoes {
-    filtrar
     echo "$conteudo_filtrado"
     echo "+++ Arquivo atual: $arquivo_atual"
     echo "+++ Filtros atuais:"
