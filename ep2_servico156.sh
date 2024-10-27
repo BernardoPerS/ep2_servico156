@@ -27,6 +27,37 @@ function selecionar_arquivo {
     done
 }
 
+function filtrar {
+    conteudo_filtrado=$(cat "$diretorio_dados/$arquivo_atual")
+    for nome_coluna in "${!vetor_filtros[@]}"; do
+        conteudo_filtrado=$(echo "$conteudo_filtrado" | grep "${vetor_filtros[$nome_coluna]}")
+    done 
+    numero_reclamacoes_filtrada=$(echo "$conteudo_filtrado" | wc -l )
+}
+
+function mostrar_reclamacoes {
+    filtrar
+    echo "$conteudo_filtrado"
+    echo "+++ Arquivo atual: $arquivo_atual"
+    echo "+++ Filtros atuais:"
+    string_filtros=""
+    primeiro=true
+    for nome_coluna in "${!vetor_filtros[@]}"; do
+        if [ $primeiro == true ]; then
+            string_filtros+="$nome_coluna = ${vetor_filtros[$nome_coluna]}"
+            primeiro=false
+        else 
+            string_filtros+=" | $nome_coluna = ${vetor_filtros[$nome_coluna]}"
+        fi
+
+    done
+    echo "$string_filtros"
+    echo "+++ Número de reclamações: $numero_reclamacoes_filtrada"
+    echo "+++++++++++++++++++++++++++++++++++++++"
+    echo ""
+
+}
+
 ## INÍCIO DO PROGRAMA ##
 
 # impressão de início do programa
@@ -60,7 +91,8 @@ if [ $# -gt 0 ]; then
         tempo_inicial=$( date +"%Y-%m-%d %H:%M:%S" )
         echo "$tempo_inicial"
         # percorre o arquivo .txt e captura as urls
-        for url in $( cat "$urls_txt" ); do
+        for url in $( cat "$urls_txt"); do
+            url=$(echo "$url" | tr -d '\r')
             wget -nv "$url" -P "$diretorio_dados"
         done 
 
@@ -130,6 +162,8 @@ fi
 
 ## SISTEMA DE MENUS COM FLUXO CONTÍNUO ##
 
+## VARIÁVEIS IMPORTANTES DO PROGRAMA ##
+
 # variável de estado do programa, para criar que se saiba qual será a próxima etapa do programa
 estado="menu"
 # menu que será usado em um comando select, corpo do menu padrão
@@ -152,6 +186,9 @@ while true; do
                 exit 1
             elif [ $opcao == "selecionar_arquivo" ]; then
                 selecionar_arquivo
+                break
+            elif [ $opcao == "mostrar_reclamacoes" ]; then
+                mostrar_reclamacoes
                 break
             fi
         done
