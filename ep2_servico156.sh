@@ -16,8 +16,8 @@ function selecionar_arquivo {
     select arquivocsv in $(basename -a "$diretorio_dados"/*.csv); do
         if [ -n "$arquivocsv" ]; then 
             arquivo_atual="$arquivocsv"
-            local numero_reclamacoes=$(cat "$diretorio_dados/$arquivo_atual" | tail -n +2 | wc -l )
-            echo ""
+            caminho_arquivo_atual="$diretorio_dados/$arquivo_atual"
+            numero_reclamacoes=$(cat $caminho_arquivo_atual | tail -n +2 | wc -l )
             echo "+++ Arquivo atual: $arquivocsv"
             echo "+++ Número de reclamações: $numero_reclamacoes"
             echo "+++++++++++++++++++++++++++++++++++++++"
@@ -25,6 +25,39 @@ function selecionar_arquivo {
         fi
         break
     done
+    # reseta o vetor_filtros
+    declare -A vetor_filtro=()
+}
+
+function adicionar_filtro_coluna {
+    colunas=$(head -n 1 $caminho_arquivo_atual)
+    # altera separador do select (de " " para ";")
+    IFS=";"
+
+    echo "Escolha uma opção de coluna para o filtro:"
+    select coluna in $colunas; do
+        # pega o índice da coluna que se deseja filtrar
+        local indice_coluna=$(head -n 1 $caminho_arquivo_atual | tr ";" '\n' | nl | grep $coluna | awk '{print $1}')
+        # remove todas as colunas da linha, exceto a coluna a ser filtrada, depois retorna apenas os valores únicos dessas linhas (dessa coluna)
+        local categorias="$(cut -d';' -f"$indice_coluna" $caminho_arquivo_atual | tail -n +2 | sort | uniq)"
+        # altera separador do select (de ";" para quebra de linha)
+        IFS=$'\n'
+        
+        echo "Escolha uma opção de valor para $coluna:"
+        select categoria in $categorias; do
+
+            echo "+++ Adicionado filtro: $coluna = $categoria"
+            echo "+++ Arquivo atual: $arquivo_atual"
+            echo "+++ Número de reclamações: $numero_reclamacoes"
+            echo "+++++++++++++++++++++++++++++++++++++++"
+            echo ""
+            break
+        done
+
+        break
+    done
+    # restaura o separador do select para o padrão (de "\n" para " ")
+    IFS=" "
 }
 
 ## INÍCIO DO PROGRAMA ##
@@ -137,29 +170,31 @@ estado="menu"
 menu_inicial="selecionar_arquivo adicionar_filtro_coluna limpar_filtros_colunas mostrar_duracao_media_reclamacao mostrar_ranking_reclamacoes mostrar_reclamacoes sair"
 # variável que define arquivo atual selecionado, tendo como padrão o arquivo completo
 arquivo_atual="arquivocompleto.csv"
+# variável que representa o caminho do arquivo atual selecionado
+caminho_arquivo_atual="$diretorio_dados/$arquivo_atual"
 
 # while que só termina com break ou pelo comando de saída
 while true; do 
-
-    if [ $estado == "menu" ]; then
+    if [ "$estado" == "menu" ]; then
         echo "Escolha uma opção de operação:"
 
         select opcao in $menu_inicial; do
             echo ""
-            if [ $opcao == "sair" ]; then
+            if [ "$opcao" == "sair" ]; then
                 echo 'Fim do programa'
                 echo "+++++++++++++++++++++++++++++++++++++++"
                 
                 exit 1
-            elif [ $opcao == "selecionar_arquivo" ]; then
+            elif [ "$opcao" == "selecionar_arquivo" ]; then
                 selecionar_arquivo
+                break
+            elif [ "$opcao" == "adicionar_filtro_coluna" ]; then
+                adicionar_filtro_coluna
                 break
             fi
         done
     fi
 
 done
-
-
 
 exit 1
