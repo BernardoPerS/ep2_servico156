@@ -106,13 +106,21 @@ declare -A vetor_filtros=()
 # função que extrai e guarda o conteúdo filtrado
 function filtrar {
     conteudo=$(cat "$caminho_arquivo_atual")
+    > filtrar_temp.txt
+    > filtrar_temp2.txt
     cabecalho=$(echo "$conteudo" | head -n 1)
     # loop que vai passando cada um dos filtro no arquivo de texto original
     for nome_coluna in "${!vetor_filtros[@]}"; do
         conteudo=$(echo "$conteudo" | grep "${vetor_filtros[$nome_coluna]}")
+        grep "${vetor_filtros[$nome_coluna]}" "filtrar_temp2.txt" > "filtrar_temp.txt"
+        mv "filtrar_temp.txt" "filtrar_temp2.txt"
     done
     # junta o cabeçalho ao conteúdo
     conteudo="$(echo -e "${cabecalho}\n${conteudo}")"
+    echo "$cabecalho" > "$arquivo_temp" 
+    echo "$filtrar_temp2.txt" >> "$arquivo_temp"
+    rm "filtrar_temp.txt"
+    rm "filtrar_temp2.txt"
     # contagem das reclamacoes
     numero_reclamacoes=$(echo "$conteudo" | tail -n +2 | wc -l )
 }
@@ -126,18 +134,15 @@ function mostrar_ranking_reclamacoes {
     select coluna in $colunas; do
         # pega o índice da coluna que se deseja filtrar
         local indice_coluna=$(head -n 1 $caminho_arquivo_atual | tr ";" '\n' | nl | grep $coluna | awk '{print $1}')
-
         # remove todas as colunas da linha, exceto a coluna a ser filtrada, depois retorna apenas os valores únicos dessas linhas (dessa coluna)
-        local coluna_separada=$(echo "$conteudo" | tail -n +2 | cut -d';' -f"$indice_coluna")
+        # cria arquivo temporário para evitar problemas de memória
+        tail -n +2 "$arquivo_temp" > ranking_temp.txt
+        local coluna_separada=$(cut -d';' -f"$indice_coluna" 'ranking_temp.txt')
         local categorias="$(echo $coluna_separada | sort | uniq)"
-
-        # conteudo sem o cabeçalho
-        conteudo_temp=$(echo $conteudo | tail -n +2)
-
         echo "+++ Serviço com mais reclamações:"
         # conta quantas linhas contém cada categoria e depois imprime as 5 linhas com maior contagem
-        echo "$categorias" | parallel -k "echo -n '    ' ; echo -n \"$conteudo_temp\" | grep -c {} | tr $'\n' ' ' ; echo {}" | sort -nr | head -n 5
-
+        cut -f $REPLY -d ';' 'ranking_temp.txt' | sort | uniq -c | sort -n -r | head -n 5
+        rm ranking_temp.txt
         echo "+++++++++++++++++++++++++++++++++++++++"
         echo ""
 
@@ -320,6 +325,9 @@ arquivo_atual="arquivocompleto.csv"
 caminho_arquivo_atual="$diretorio_dados/$arquivo_atual"
 # variável onde todo o conteúdo desejado fica armazenado
 conteudo=$(< $caminho_arquivo_atual)
+# arquivo de texto onde todo o conteúdo desejado fica armazenado
+cat $caminho_arquivo_atual > "arquivo_temp.txt"
+arquivo_temp="arquivo_temp.txt"
 
 # while que só termina com break ou pelo comando de saída
 while true; do 
@@ -333,7 +341,7 @@ while true; do
             if [ "$opcao" == "sair" ]; then
                 echo 'Fim do programa'
                 echo "+++++++++++++++++++++++++++++++++++++++"
-                
+                rm arquivo_temp.txt
                 exit 1
             elif [ "$opcao" == "selecionar_arquivo" ]; then
                 selecionar_arquivo
@@ -361,4 +369,5 @@ while true; do
 
 done
 
+rm arquiv_temp.txt
 exit 1
