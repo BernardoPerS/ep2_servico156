@@ -34,6 +34,7 @@ function selecionar_arquivo {
     IFS=" "
     # reseta o vetor_filtros
     vetor_filtros=()
+    filtrar
 }
 
 function adicionar_filtro_coluna {
