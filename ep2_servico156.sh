@@ -29,7 +29,7 @@ function selecionar_arquivo {
         break
     done
     # reseta o vetor_filtros
-    declare -A vetor_filtro=()
+    vetor_filtros=()
 }
 
 function adicionar_filtro_coluna {
@@ -45,12 +45,31 @@ function adicionar_filtro_coluna {
         local categorias="$(cut -d';' -f"$indice_coluna" $caminho_arquivo_atual | tail -n +2 | sort | uniq)"
         # altera separador do select (de ";" para quebra de linha)
         IFS=$'\n'
-        
         echo "Escolha uma opção de valor para $coluna:"
         select categoria in $categorias; do
+<<<<<<< Updated upstream
 
+=======
+            # adiciona o filtro ao vetor de filtros
+            vetor_filtros["$coluna"]="$categoria"
+            # atualiza a variável conteudo com o conteudo filtrado
+            filtrar
+>>>>>>> Stashed changes
             echo "+++ Adicionado filtro: $coluna = $categoria"
             echo "+++ Arquivo atual: $arquivo_atual"
+            echo "+++ Filtros atuais:"
+            # mostra os filtros atuais 
+            local string_filtros=""
+            local primeiro=true
+            for nome_coluna in "${!vetor_filtros[@]}"; do
+                if [ $primeiro == true ]; then
+                    string_filtros+="$nome_coluna = ${vetor_filtros[$nome_coluna]}"
+                    primeiro=false
+                else 
+                    string_filtros+=" | $nome_coluna = ${vetor_filtros[$nome_coluna]}"
+                fi
+            done
+            echo "$string_filtros"
             echo "+++ Número de reclamações: $numero_reclamacoes"
             echo "+++++++++++++++++++++++++++++++++++++++"
             echo ""
@@ -65,7 +84,7 @@ function adicionar_filtro_coluna {
 
 function limpar_filtros_colunas {
     # atualiza o número de reclamações
-    numero_reclamacoes=$(cat "$diretorio_dados/$arquivo_atual" | tail -n +2 | wc -l )
+    numero_reclamacoes=$(cat "$caminho_arquivo_atual" | tail -n +2 | wc -l )
     
     echo "+++ Filtros removidos"
     echo "+++ Arquivo atual: $arquivo_atual"
@@ -74,24 +93,50 @@ function limpar_filtros_colunas {
     echo ""
 
     # limpa o vetor que armazena os filtros
-    declare -A vetor_filtros=()
+    vetor_filtros=()
 }
 
 # vetor global que guarda os filtros
 declare -A vetor_filtros=()
-# variável global que guarda o conteúdo filtrado
-conteudo_filtrado=""
 function filtrar {
-    conteudo_filtrado=$(cat "$caminho_arquivo_atual")
+    conteudo=$(cat "$caminho_arquivo_atual")
     for nome_coluna in "${!vetor_filtros[@]}"; do
-        conteudo_filtrado=$(echo "$conteudo_filtrado" | grep "${vetor_filtros[$nome_coluna]}")
+        conteudo=$(echo "$conteudo" | grep "${vetor_filtros[$nome_coluna]}")
     done 
-    numero_reclamacoes=$(echo "$conteudo_filtrado" | wc -l )
+    numero_reclamacoes=$(echo "$conteudo" | wc -l )
 }
 
+function mostrar_ranking_reclamacoes {
+    colunas=$(head -n 1 $caminho_arquivo_atual)
+    # altera separador do select (de " " para ";")
+    IFS=";"
+
+    echo "Escolha uma opção de coluna para análise:"
+    select coluna in $colunas; do
+        # pega o índice da coluna que se deseja filtrar
+        local indice_coluna=$(head -n 1 $caminho_arquivo_atual | tr ";" '\n' | nl | grep $coluna | awk '{print $1}')
+        # remove todas as colunas da linha, exceto a coluna a ser filtrada, depois retorna apenas os valores únicos dessas linhas (dessa coluna)
+        local coluna_separada="$(cut -d';' -f"$indice_coluna" $caminho_arquivo_atual | tail -n +2)"
+        local categorias="$(echo $coluna_separada | sort | uniq)"
+        # altera separador do select (de ";" para quebra de linha)
+        # echo "$categorias" | parallel -k "echo -n '{}: '; echo '$conteudo' | grep -c '{}' | wc -l" | sort -nr | head -n 5
+        # echo "$categorias" | parallel -k "echo '$conteudo' | grep '{}' | wc -l" | sort -nr | head -n 5
+        echo "+++ Serviço com mais reclamações:"
+        echo "+++++++++++++++++++++++++++++++++++++++"
+        echo ""
+
+        break
+    done
+    # restaura o separador do select para o padrão (de "\n" para " ")
+    IFS=" "
+}
 function mostrar_reclamacoes {
+<<<<<<< Updated upstream
     filtrar
     echo "$conteudo_filtrado"
+=======
+    echo "$conteudo"
+>>>>>>> Stashed changes
     echo "+++ Arquivo atual: $arquivo_atual"
     echo "+++ Filtros atuais:"
     local string_filtros=""
@@ -142,7 +187,6 @@ if [ $# -gt 0 ]; then
 
         # guarda a data do começo do download no formato desejado
         tempo_inicial=$( date +"%Y-%m-%d %H:%M:%S" )
-        echo "$tempo_inicial"
         # percorre o arquivo .txt e captura as urls
         for url in $( cat "$urls_txt"); do
             url=$(echo "$url" | tr -d '\r')
@@ -197,8 +241,6 @@ if [ $# -gt 0 ]; then
 
     fi
 
-
-
 ## MODO DE INICIALIZAÇÃO II ##
 
 else 
@@ -225,6 +267,8 @@ menu_inicial="selecionar_arquivo adicionar_filtro_coluna limpar_filtros_colunas 
 arquivo_atual="arquivocompleto.csv"
 # variável que representa o caminho do arquivo atual selecionado
 caminho_arquivo_atual="$diretorio_dados/$arquivo_atual"
+# variável onde todo o conteúdo desejado fica armazenado
+conteudo=$(< $caminho_arquivo_atual)
 
 # while que só termina com break ou pelo comando de saída
 while true; do 
@@ -246,6 +290,17 @@ while true; do
                 break
             elif [ "$opcao" == "limpar_filtros_colunas" ]; then
                 limpar_filtros_colunas
+                break
+            elif [ "$opcao" == "mostrar_ranking_reclamacoes" ]; then
+                mostrar_ranking_reclamacoes
+                break
+            elif [ "$opcao" == "mostrar_reclamacoes" ]; then
+                mostrar_reclamacoes
+                break
+            else
+                # para debug
+                # read command
+                # eval "$command"
                 break
             fi
         done
