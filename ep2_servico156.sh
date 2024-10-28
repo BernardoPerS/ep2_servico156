@@ -231,7 +231,7 @@ if [ $# -gt 0 ]; then
         # percorre o arquivo .txt e captura as urls
         for url in $( cat "$urls_txt"); do
             url=$(echo "$url" | tr -d '\r')
-            wget -nv "$url" -P "$diretorio_dados"
+            wget -nv "$url" -P "$diretorio_dados" 2>&1 | awk '{print $1, $2; print $3, $4, $5; print $6, $7}' 
         done 
 
         # guarda a data de encerramento do download
