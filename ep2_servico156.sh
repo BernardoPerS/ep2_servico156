@@ -315,9 +315,6 @@ while true; do
                 mostrar_reclamacoes
                 break
             else
-                # para debug
-                read command
-                eval "$command"
                 break
             fi
         done
