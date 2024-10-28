@@ -47,14 +47,10 @@ function adicionar_filtro_coluna {
         IFS=$'\n'
         echo "Escolha uma opção de valor para $coluna:"
         select categoria in $categorias; do
-<<<<<<< Updated upstream
-
-=======
             # adiciona o filtro ao vetor de filtros
             vetor_filtros["$coluna"]="$categoria"
             # atualiza a variável conteudo com o conteudo filtrado
             filtrar
->>>>>>> Stashed changes
             echo "+++ Adicionado filtro: $coluna = $categoria"
             echo "+++ Arquivo atual: $arquivo_atual"
             echo "+++ Filtros atuais:"
@@ -130,13 +126,9 @@ function mostrar_ranking_reclamacoes {
     # restaura o separador do select para o padrão (de "\n" para " ")
     IFS=" "
 }
+
 function mostrar_reclamacoes {
-<<<<<<< Updated upstream
-    filtrar
-    echo "$conteudo_filtrado"
-=======
     echo "$conteudo"
->>>>>>> Stashed changes
     echo "+++ Arquivo atual: $arquivo_atual"
     echo "+++ Filtros atuais:"
     local string_filtros=""
@@ -253,7 +245,6 @@ else
     exit 1
     fi
 fi
-
 
 ## SISTEMA DE MENUS COM FLUXO CONTÍNUO ##
 
