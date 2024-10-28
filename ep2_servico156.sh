@@ -13,6 +13,8 @@
 
 function selecionar_arquivo {
     echo "Escolha uma opção de arquivo:"
+    # altera o separador do select (de " " para "\n")
+    IFS=$'\n'
     select arquivocsv in $(basename -a "$diretorio_dados"/*.csv); do
         # confere se a opção existe, caso não, volta para o menu
         if [ -n "$arquivocsv" ]; then 
@@ -28,6 +30,8 @@ function selecionar_arquivo {
         fi
         break
     done
+    # restaura o separador do select para o padrão (de "\n" para " ")
+    IFS=" "
     # reseta o vetor_filtros
     vetor_filtros=()
 }
@@ -90,16 +94,29 @@ function limpar_filtros_colunas {
 
     # limpa o vetor que armazena os filtros
     vetor_filtros=()
+    filtrar
 }
 
 # vetor global que guarda os filtros
 declare -A vetor_filtros=()
+# função que extrai e guarda o conteúdo filtrado
 function filtrar {
     conteudo=$(cat "$caminho_arquivo_atual")
+    # loop que vai passando cada um dos filtro no arquivo de texto original
     for nome_coluna in "${!vetor_filtros[@]}"; do
         conteudo=$(echo "$conteudo" | grep "${vetor_filtros[$nome_coluna]}")
-    done 
-    numero_reclamacoes=$(echo "$conteudo" | wc -l )
+    done
+    # contagem das reclamacoes
+    # caso do conteúdo estar vazio
+    if [ -z "$conteudo" ]; then
+        numero_reclamacoes=0
+    # caso sem filtro
+    elif [ ${#vetor_filtros[@]} -eq 0 ]; then
+        numero_reclamacoes=$(echo "$conteudo" | tail -n +2 | wc -l )
+    #caso com filtro
+    else
+        numero_reclamacoes=$(echo "$conteudo" | wc -l )
+    fi
 }
 
 function mostrar_ranking_reclamacoes {
@@ -127,6 +144,7 @@ function mostrar_ranking_reclamacoes {
 }
 
 function mostrar_reclamacoes {
+    # imprime as reclamacoes com os filtros, mostrando quais estão aplicados
     echo "$conteudo"
     echo "+++ Arquivo atual: $arquivo_atual"
     echo "+++ Filtros atuais:"
@@ -262,9 +280,11 @@ conteudo=$(< $caminho_arquivo_atual)
 
 # while que só termina com break ou pelo comando de saída
 while true; do 
+    
     if [ "$estado" == "menu" ]; then
         echo "Escolha uma opção de operação:"
-
+        
+        # menu principal do programa gerado a partir do select
         select opcao in $menu_inicial; do
             echo ""
             if [ "$opcao" == "sair" ]; then
