@@ -47,7 +47,9 @@ function adicionar_filtro_coluna {
         # pega o índice da coluna que se deseja filtrar
         local indice_coluna=$(head -n 1 $caminho_arquivo_atual | tr ";" '\n' | nl | grep $coluna | awk '{print $1}')
         # remove todas as colunas da linha, exceto a coluna a ser filtrada, depois retorna apenas os valores únicos dessas linhas (dessa coluna)
-        local categorias="$(cut -d';' -f"$indice_coluna" $caminho_arquivo_atual | tail -n +2 | sort | uniq)"
+        # local categorias="$(cut -d';' -f"$indice_coluna" $caminho_arquivo_atual | tail -n +2 | sort | uniq)"
+        local coluna_separada=$(echo "$conteudo" | tail -n +2 | cut -d';' -f"$indice_coluna")
+        local categorias="$(echo $coluna_separada | sort | uniq)"
         # altera separador do select (de ";" para quebra de linha)
         IFS=$'\n'
         echo "Escolha uma opção de valor para $coluna:"
