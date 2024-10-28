@@ -105,18 +105,15 @@ declare -A vetor_filtros=()
 # função que extrai e guarda o conteúdo filtrado
 function filtrar {
     conteudo=$(cat "$caminho_arquivo_atual")
+    cabecalho=$(echo "$conteudo" | head -n 1)
     # loop que vai passando cada um dos filtro no arquivo de texto original
     for nome_coluna in "${!vetor_filtros[@]}"; do
         conteudo=$(echo "$conteudo" | grep "${vetor_filtros[$nome_coluna]}")
     done
+    # junta o cabeçalho ao conteúdo
+    conteudo="$(echo -e "${cabecalho}\n${conteudo}")"
     # contagem das reclamacoes
-    # caso do conteúdo estar vazio
-    if [ -z "$conteudo" ]; then
-        numero_reclamacoes=0
-    #caso com conteúdo
-    else
-        numero_reclamacoes=$(echo "$conteudo" | tail -n +2 | wc -l )
-    fi
+    numero_reclamacoes=$(echo "$conteudo" | tail -n +2 | wc -l )
 }
 
 function mostrar_ranking_reclamacoes {
@@ -157,6 +154,7 @@ function mostrar_reclamacoes {
     echo "+++ Filtros atuais:"
     local string_filtros=""
     local primeiro=true
+    # percorre as opções de coluna da tabela para criar a string indicando os filtros selecionados 
     for nome_coluna in "${!vetor_filtros[@]}"; do
         if [ $primeiro == true ]; then
             string_filtros+="$nome_coluna = ${vetor_filtros[$nome_coluna]}"
@@ -183,15 +181,19 @@ function mostrar_duracao_media_reclamacao {
     # altera separador do select (de " " para "\n")
     IFS=$'\n'
     # loop que percorre as linhas do conteúdo
-    for linha in $(echo "$conteudo"); do
+    for linha in $(echo "$conteudo" | tail -n +2 ); do
         
         # utilizando o awk para capturar as colunas que contém as datas de parecer e abertura
         data_abertura=$(echo "$linha" | awk -F';' '{print $1}' )
         data_parecer=$(echo "$linha" | awk -F';' '{print $13}' )
+        echo "$linha"
         
-        # cálculo da diferença de tempo entre as duas datas em segundos e posterior conversão para dias
-        diferenca_segundos=$(bc <<< "$(date -d $data_parecer +%s) - $(date -d $data_abertura +%s)")
-        duracao_somada=$(bc <<< "$duracao_somada + $diferenca_segundos / 86400")
+        # verificação se as datas são válidas, ou algo de estranho foi encontrado
+        if date -d $data_parecer &>/dev/null && date -d $data_abertura &>/dev/null; then
+            # cálculo da diferença de tempo entre as duas datas em segundos e posterior conversão para dias
+            diferenca_segundos=$(bc <<< "$(date -d $data_parecer +%s) - $(date -d $data_abertura +%s)")
+            duracao_somada=$(bc <<< "$duracao_somada + $diferenca_segundos / 86400")
+        fi
     
     done 
     # restaura o IFS
