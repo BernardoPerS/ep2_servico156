@@ -128,17 +128,24 @@ function mostrar_ranking_reclamacoes {
     select coluna in $colunas; do
         # pega o índice da coluna que se deseja filtrar
         local indice_coluna=$(head -n 1 $caminho_arquivo_atual | tr ";" '\n' | nl | grep $coluna | awk '{print $1}')
+
         # remove todas as colunas da linha, exceto a coluna a ser filtrada, depois retorna apenas os valores únicos dessas linhas (dessa coluna)
-        local coluna_separada="$(cut -d';' -f"$indice_coluna" $caminho_arquivo_atual | tail -n +2)"
+        local coluna_separada=$(echo "$conteudo" | tail -n +2 | cut -d';' -f"$indice_coluna")
         local categorias="$(echo $coluna_separada | sort | uniq)"
-        # echo "$categorias" | parallel -k "echo -n '{}: '; echo '$conteudo' | grep -c '{}' | wc -l" | sort -nr | head -n 5
-        # echo "$categorias" | parallel -k "echo '$conteudo' | grep '{}' | wc -l" | sort -nr | head -n 5
+
+        # conteudo sem o cabeçalho
+        conteudo_temp=$(echo $conteudo | tail -n +2)
+
         echo "+++ Serviço com mais reclamações:"
+        # conta quantas linhas contém cada categoria e depois imprime as 5 linhas com maior contagem
+        echo "$categorias" | parallel -k "echo -n '    ' ; echo -n \"$conteudo_temp\" | grep -c {} | tr $'\n' ' ' ; echo {}" | sort -nr | head -n 5
+
         echo "+++++++++++++++++++++++++++++++++++++++"
         echo ""
 
         break
     done
+
     # restaura o separador do select para o padrão (de "\n" para " ")
     IFS=" "
 }
@@ -309,8 +316,8 @@ while true; do
                 break
             else
                 # para debug
-                # read command
-                # eval "$command"
+                read command
+                eval "$command"
                 break
             fi
         done
