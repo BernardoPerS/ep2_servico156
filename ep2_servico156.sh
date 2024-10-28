@@ -145,7 +145,9 @@ if [ $# -gt 0 ]; then
         echo "$tempo_inicial"
         # percorre o arquivo .txt e captura as urls
         for url in $( cat "$urls_txt"); do
+            # remove "%0D" do final da linha se tiver
             url=$(echo "$url" | tr -d '\r')
+            # baixa o arquivo da url
             wget -nv "$url" -P "$diretorio_dados"
         done 
 
