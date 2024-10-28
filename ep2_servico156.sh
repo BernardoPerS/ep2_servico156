@@ -114,7 +114,6 @@ function mostrar_ranking_reclamacoes {
         # remove todas as colunas da linha, exceto a coluna a ser filtrada, depois retorna apenas os valores únicos dessas linhas (dessa coluna)
         local coluna_separada="$(cut -d';' -f"$indice_coluna" $caminho_arquivo_atual | tail -n +2)"
         local categorias="$(echo $coluna_separada | sort | uniq)"
-        # altera separador do select (de ";" para quebra de linha)
         # echo "$categorias" | parallel -k "echo -n '{}: '; echo '$conteudo' | grep -c '{}' | wc -l" | sort -nr | head -n 5
         # echo "$categorias" | parallel -k "echo '$conteudo' | grep '{}' | wc -l" | sort -nr | head -n 5
         echo "+++ Serviço com mais reclamações:"
