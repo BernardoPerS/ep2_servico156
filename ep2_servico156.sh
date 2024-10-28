@@ -172,6 +172,38 @@ function mostrar_reclamacoes {
     echo ""
 }
 
+
+
+function mostrar_duracao_media_reclamacao {
+    filtrar
+    # variável para calcular a duração média em dias das reclamações selecionadas
+    local duracao_media_reclamacao=0
+    # variáveis para ajudar na conta
+    local duracao_somada=0
+    # altera separador do select (de " " para "\n")
+    IFS=$'\n'
+    # loop que percorre as linhas do conteúdo
+    for linha in $(echo "$conteudo"); do
+        # utilizando o awk para capturar as colunas que contém as datas de parecer e abertura
+        data_abertura=$(echo "$linha" | awk -F';' '{print $1}' )
+        data_parecer=$(echo "$linha" | awk -F';' '{print $13}' )
+        
+        # cálculo da diferença de tempo entre as duas datas em segundos e posterior conversão para dias
+        diferenca_segundos=$(bc <<< "$(date -d $data_parecer +%s) - $(date -d $data_abertura +%s)")
+        duracao_somada=$(bc <<< "$duracao_somada + $diferenca_segundos / 86400")
+    
+    done 
+    # restaura o IFS
+    IFS=" "
+    # divide o tempo total pelo numero de reclamações
+    duracao_media_reclamacao=$(bc <<< "$duracao_somada / $numero_reclamacoes")
+
+    echo "+++ Duração média da reclamação: $duracao_media_reclamacao dias"
+    echo "+++++++++++++++++++++++++++++++++++++++"
+}
+
+
+
 ## INÍCIO DO PROGRAMA ##
 
 # impressão de início do programa
@@ -313,6 +345,9 @@ while true; do
                 break
             elif [ "$opcao" == "mostrar_reclamacoes" ]; then
                 mostrar_reclamacoes
+                break
+            elif [ $"$opcao" == "mostrar_duracao_media_reclamacao" ]; then
+                mostrar_duracao_media_reclamacao
                 break
             else
                 break
