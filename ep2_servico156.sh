@@ -110,12 +110,9 @@ function filtrar {
     # caso do conteúdo estar vazio
     if [ -z "$conteudo" ]; then
         numero_reclamacoes=0
-    # caso sem filtro
-    elif [ ${#vetor_filtros[@]} -eq 0 ]; then
-        numero_reclamacoes=$(echo "$conteudo" | tail -n +2 | wc -l )
-    #caso com filtro
+    #caso com conteúdo
     else
-        numero_reclamacoes=$(echo "$conteudo" | wc -l )
+        numero_reclamacoes=$(echo "$conteudo" | tail -n +2 | wc -l )
     fi
 }
 
@@ -145,7 +142,7 @@ function mostrar_ranking_reclamacoes {
 
 function mostrar_reclamacoes {
     # imprime as reclamacoes com os filtros, mostrando quais estão aplicados
-    echo "$conteudo"
+    echo "$conteudo" | tail -n +2
     echo "+++ Arquivo atual: $arquivo_atual"
     echo "+++ Filtros atuais:"
     local string_filtros=""
@@ -177,6 +174,7 @@ function mostrar_duracao_media_reclamacao {
     IFS=$'\n'
     # loop que percorre as linhas do conteúdo
     for linha in $(echo "$conteudo"); do
+        
         # utilizando o awk para capturar as colunas que contém as datas de parecer e abertura
         data_abertura=$(echo "$linha" | awk -F';' '{print $1}' )
         data_parecer=$(echo "$linha" | awk -F';' '{print $13}' )
