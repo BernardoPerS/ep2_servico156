@@ -34,6 +34,7 @@ function selecionar_arquivo {
     IFS=" "
     # reseta o vetor_filtros
     vetor_filtros=()
+    filtrar
 }
 
 function adicionar_filtro_coluna {
@@ -46,7 +47,10 @@ function adicionar_filtro_coluna {
         # pega o índice da coluna que se deseja filtrar
         local indice_coluna=$(head -n 1 $caminho_arquivo_atual | tr ";" '\n' | nl | grep $coluna | awk '{print $1}')
         # remove todas as colunas da linha, exceto a coluna a ser filtrada, depois retorna apenas os valores únicos dessas linhas (dessa coluna)
-        local categorias="$(cut -d';' -f"$indice_coluna" $caminho_arquivo_atual | tail -n +2 | sort | uniq)"
+        # cria arquivo temporário com a variável conteudo, de forma a evitar problemas de memória
+        echo "$conteudo" > conteudo_temp.txt
+        local categorias="$(cut -d';' -f"$indice_coluna" 'conteudo_temp.txt' | tail -n +2 | sort | uniq)"
+        rm conteudo_temp.txt 
         # altera separador do select (de ";" para quebra de linha)
         IFS=$'\n'
         echo "Escolha uma opção de valor para $coluna:"
@@ -103,12 +107,22 @@ declare -A vetor_filtros=()
 function filtrar {
     conteudo=$(cat "$caminho_arquivo_atual")
     cabecalho=$(echo "$conteudo" | head -n 1)
+    > filtrar_temp.txt
+    > filtrar_temp2.txt
+    cat "$caminho_arquivo_atual" > filtrar_temp2.txt
+    conteudo=$(echo "$conteudo" | tail -n +2)
     # loop que vai passando cada um dos filtro no arquivo de texto original
     for nome_coluna in "${!vetor_filtros[@]}"; do
         conteudo=$(echo "$conteudo" | grep "${vetor_filtros[$nome_coluna]}")
+        grep "${vetor_filtros[$nome_coluna]}" "filtrar_temp2.txt" > "filtrar_temp.txt"
+        mv "filtrar_temp.txt" "filtrar_temp2.txt"
     done
-    # junta o cabeçalho ao conteúdo
+    # junta o cabeçalho ao conteúdo (proibido mexer)
     conteudo="$(echo -e "${cabecalho}\n${conteudo}")"
+    echo "$conteudo" > conteudo_analise.txt
+    echo "$cabecalho" > "$arquivo_temp" 
+    cat filtrar_temp2.txt >> "$arquivo_temp"
+    rm "filtrar_temp2.txt"
     # contagem das reclamacoes
     numero_reclamacoes=$(echo "$conteudo" | tail -n +2 | wc -l )
 }
@@ -123,16 +137,20 @@ function mostrar_ranking_reclamacoes {
         # pega o índice da coluna que se deseja filtrar
         local indice_coluna=$(head -n 1 $caminho_arquivo_atual | tr ";" '\n' | nl | grep $coluna | awk '{print $1}')
         # remove todas as colunas da linha, exceto a coluna a ser filtrada, depois retorna apenas os valores únicos dessas linhas (dessa coluna)
-        local coluna_separada="$(cut -d';' -f"$indice_coluna" $caminho_arquivo_atual | tail -n +2)"
+        # cria arquivo temporário para evitar problemas de memória
+        tail -n +2 "$arquivo_temp" > ranking_temp.txt
+        local coluna_separada=$(cut -d';' -f"$indice_coluna" 'ranking_temp.txt')
         local categorias="$(echo $coluna_separada | sort | uniq)"
-        # echo "$categorias" | parallel -k "echo -n '{}: '; echo '$conteudo' | grep -c '{}' | wc -l" | sort -nr | head -n 5
-        # echo "$categorias" | parallel -k "echo '$conteudo' | grep '{}' | wc -l" | sort -nr | head -n 5
         echo "+++ Serviço com mais reclamações:"
+        # conta quantas linhas contém cada categoria e depois imprime as 5 linhas com maior contagem
+        cut -f $REPLY -d ';' 'ranking_temp.txt' | sort | uniq -c | sort -n -r | head -n 5
+        rm ranking_temp.txt
         echo "+++++++++++++++++++++++++++++++++++++++"
         echo ""
 
         break
     done
+
     # restaura o separador do select para o padrão (de "\n" para " ")
     IFS=" "
 }
@@ -176,7 +194,6 @@ function mostrar_duracao_media_reclamacao {
         # utilizando o awk para capturar as colunas que contém as datas de parecer e abertura
         data_abertura=$(echo "$linha" | awk -F';' '{print $1}' )
         data_parecer=$(echo "$linha" | awk -F';' '{print $13}' )
-        echo "$linha"
         
         # verificação se as datas são válidas, ou algo de estranho foi encontrado
         if date -d $data_parecer &>/dev/null && date -d $data_abertura &>/dev/null; then
@@ -309,6 +326,9 @@ arquivo_atual="arquivocompleto.csv"
 caminho_arquivo_atual="$diretorio_dados/$arquivo_atual"
 # variável onde todo o conteúdo desejado fica armazenado
 conteudo=$(< $caminho_arquivo_atual)
+# arquivo de texto onde todo o conteúdo desejado fica armazenado
+cat $caminho_arquivo_atual > "arquivo_temp.txt"
+arquivo_temp="arquivo_temp.txt"
 
 # while que só termina com break ou pelo comando de saída
 while true; do 
@@ -322,7 +342,7 @@ while true; do
             if [ "$opcao" == "sair" ]; then
                 echo 'Fim do programa'
                 echo "+++++++++++++++++++++++++++++++++++++++"
-                
+                rm arquivo_temp.txt
                 exit 1
             elif [ "$opcao" == "selecionar_arquivo" ]; then
                 selecionar_arquivo
@@ -343,9 +363,6 @@ while true; do
                 mostrar_duracao_media_reclamacao
                 break
             else
-                # para debug
-                # read command
-                # eval "$command"
                 break
             fi
         done
@@ -353,4 +370,5 @@ while true; do
 
 done
 
+rm arquiv_temp.txt
 exit 1
