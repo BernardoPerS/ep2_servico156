@@ -38,28 +38,33 @@ function selecionar_arquivo {
 }
 
 function adicionar_filtro_coluna {
-    colunas=$(head -n 1 $caminho_arquivo_atual)
-    # altera separador do select (de " " para ";")
-    IFS=";"
-
+    # captura o cabeçalho
+    colunas=$(head -n 1 "$caminho_arquivo_atual")
+    # altera separador do select (de " " para "\n")
+    IFS=$'\n'
+    # modifica o cabeçalho de modo que possa ser interpretado pelo select
+    colunas=$(echo "$colunas" | tr ';' '\n' )
+    # variável que será utilizada para consertar o bug da última coluna
+    total_colunas=$(echo "$colunas" | wc -l)
     echo "Escolha uma opção de coluna para o filtro:"
     select coluna in $colunas; do
         # pega o índice da coluna que se deseja filtrar
         local indice_coluna=$(head -n 1 $caminho_arquivo_atual | tr ";" '\n' | nl | grep $coluna | awk '{print $1}')
         # remove todas as colunas da linha, exceto a coluna a ser filtrada, depois retorna apenas os valores únicos dessas linhas (dessa coluna)
-        # cria arquivo temporário com a variável conteudo, de forma a evitar problemas de memória
-        # echo "$conteudo" > conteudo_temp.txt ( obsoleto )
-        local categorias="$(cut -d';' -f"$indice_coluna" 'arquivo_temp.txt' | tail -n +2 | sort | uniq)"
-        #rm conteudo_temp.txt ( obsoleto ) 
-        # altera separador do select (de ";" para quebra de linha)
-        IFS=$'\n'
-        echo "Escolha uma opção de valor para $coluna:"
+        
+        # seleção das categorias, com tratamento caso seja a última coluna (tr -d '\r')
+        local categorias="$(cut -d';' -f"$indice_coluna" 'arquivo_temp.txt' | tail -n +2 | sort | uniq | tr -d '\r')"
+
+        # um pequeno detalhe para correção do bug da última coluna, que poderia possuir símbolos indesejados
+        string_coluna=$(echo "$coluna" | tr -d '\r\n')
+        echo "Escolha uma opção de valor para $string_coluna:"
+
         select categoria in $categorias; do
             # adiciona o filtro ao vetor de filtros
-            vetor_filtros["$coluna"]="$categoria"
+            vetor_filtros["$string_coluna"]="$categoria"
             # atualiza a variável conteudo com o conteudo filtrado
             filtrar
-            echo "+++ Adicionado filtro: $coluna = $categoria"
+            echo "+++ Adicionado filtro: $string_coluna = $categoria"
             echo "+++ Arquivo atual: $arquivo_atual"
             echo "+++ Filtros atuais:"
             # mostra os filtros atuais 
@@ -105,20 +110,16 @@ function limpar_filtros_colunas {
 declare -A vetor_filtros=()
 # função que extrai e guarda o conteúdo filtrado
 function filtrar {
-    #conteudo=$(cat "$caminho_arquivo_atual") ( obsoleto )
     cabecalho=$( head -n 1 "$caminho_arquivo_atual")
     > filtrar_temp.txt
     > filtrar_temp2.txt
     cat "$caminho_arquivo_atual" | tail -n +2 > filtrar_temp2.txt
-    # conteudo=$(echo "$conteudo" | tail -n +2) (obsoleto)
-    # loop que vai passando cada um dos filtro no arquivo de texto original
+    # loop que vai passando cada um dos filtros no arquivo de texto original
     for nome_coluna in "${!vetor_filtros[@]}"; do
-        #conteudo=$(echo "$conteudo" | grep "${vetor_filtros[$nome_coluna]}") (obsoleto)
         grep "${vetor_filtros[$nome_coluna]}" "filtrar_temp2.txt" > "filtrar_temp.txt"
         mv "filtrar_temp.txt" "filtrar_temp2.txt"
     done
-    # junta o cabeçalho ao conteúdo (proibido mexer)
-    # conteudo="$(echo -e "${cabecalho}\n${conteudo}")" (obsoleto)
+    # junta o cabeçalho ao conteudo
     echo "$cabecalho" > "$arquivo_temp" 
     cat filtrar_temp2.txt >> "$arquivo_temp"
     rm "filtrar_temp2.txt"
@@ -156,7 +157,6 @@ function mostrar_ranking_reclamacoes {
 
 function mostrar_reclamacoes {
     # imprime as reclamacoes com os filtros, mostrando quais estão aplicados
-    #echo "$conteudo" | tail -n +2 ( obsoleto )
     cat "$arquivo_temp" | tail -n +2
     echo "+++ Arquivo atual: $arquivo_atual"
     echo "+++ Filtros atuais:"
@@ -324,8 +324,6 @@ menu_inicial="selecionar_arquivo adicionar_filtro_coluna limpar_filtros_colunas 
 arquivo_atual="arquivocompleto.csv"
 # variável que representa o caminho do arquivo atual selecionado
 caminho_arquivo_atual="$diretorio_dados/$arquivo_atual"
-# variável onde todo o conteúdo desejado fica armazenado
-# conteudo=$(< $caminho_arquivo_atual) (obsoleto)
 # arquivo de texto onde todo o conteúdo desejado fica armazenado
 cat $caminho_arquivo_atual > "arquivo_temp.txt"
 arquivo_temp="arquivo_temp.txt"
@@ -336,7 +334,7 @@ while true; do
     if [ "$estado" == "menu" ]; then
         echo "Escolha uma opção de operação:"
         
-        # menu principal do programa gerado a partir do select
+        # menu principal do programa gerado a partir do select, com todas as opções do menu
         select opcao in $menu_inicial; do
             echo ""
             if [ "$opcao" == "sair" ]; then
@@ -369,6 +367,6 @@ while true; do
     fi
 
 done
-
+# remover o arquivo que guardava o conteudo que o programa estava gerindo
 rm arquiv_temp.txt
 exit 1
