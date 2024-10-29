@@ -48,9 +48,9 @@ function adicionar_filtro_coluna {
         local indice_coluna=$(head -n 1 $caminho_arquivo_atual | tr ";" '\n' | nl | grep $coluna | awk '{print $1}')
         # remove todas as colunas da linha, exceto a coluna a ser filtrada, depois retorna apenas os valores únicos dessas linhas (dessa coluna)
         # cria arquivo temporário com a variável conteudo, de forma a evitar problemas de memória
-        echo "$conteudo" > conteudo_temp.txt
-        local categorias="$(cut -d';' -f"$indice_coluna" 'conteudo_temp.txt' | tail -n +2 | sort | uniq)"
-        rm conteudo_temp.txt 
+        # echo "$conteudo" > conteudo_temp.txt ( obsoleto )
+        local categorias="$(cut -d';' -f"$indice_coluna" 'arquivo_temp.txt' | tail -n +2 | sort | uniq)"
+        #rm conteudo_temp.txt ( obsoleto ) 
         # altera separador do select (de ";" para quebra de linha)
         IFS=$'\n'
         echo "Escolha uma opção de valor para $coluna:"
@@ -105,26 +105,25 @@ function limpar_filtros_colunas {
 declare -A vetor_filtros=()
 # função que extrai e guarda o conteúdo filtrado
 function filtrar {
-    conteudo=$(cat "$caminho_arquivo_atual")
-    cabecalho=$(echo "$conteudo" | head -n 1)
+    #conteudo=$(cat "$caminho_arquivo_atual") ( obsoleto )
+    cabecalho=$( head -n 1 "$caminho_arquivo_atual")
     > filtrar_temp.txt
     > filtrar_temp2.txt
-    cat "$caminho_arquivo_atual" > filtrar_temp2.txt
-    conteudo=$(echo "$conteudo" | tail -n +2)
+    cat "$caminho_arquivo_atual" | tail -n +2 > filtrar_temp2.txt
+    # conteudo=$(echo "$conteudo" | tail -n +2) (obsoleto)
     # loop que vai passando cada um dos filtro no arquivo de texto original
     for nome_coluna in "${!vetor_filtros[@]}"; do
-        conteudo=$(echo "$conteudo" | grep "${vetor_filtros[$nome_coluna]}")
+        #conteudo=$(echo "$conteudo" | grep "${vetor_filtros[$nome_coluna]}") (obsoleto)
         grep "${vetor_filtros[$nome_coluna]}" "filtrar_temp2.txt" > "filtrar_temp.txt"
         mv "filtrar_temp.txt" "filtrar_temp2.txt"
     done
     # junta o cabeçalho ao conteúdo (proibido mexer)
-    conteudo="$(echo -e "${cabecalho}\n${conteudo}")"
-    echo "$conteudo" > conteudo_analise.txt
+    # conteudo="$(echo -e "${cabecalho}\n${conteudo}")" (obsoleto)
     echo "$cabecalho" > "$arquivo_temp" 
     cat filtrar_temp2.txt >> "$arquivo_temp"
     rm "filtrar_temp2.txt"
     # contagem das reclamacoes
-    numero_reclamacoes=$(echo "$conteudo" | tail -n +2 | wc -l )
+    numero_reclamacoes=$(cat "$arquivo_temp" | tail -n +2 | wc -l )
 }
 
 function mostrar_ranking_reclamacoes {
@@ -157,7 +156,8 @@ function mostrar_ranking_reclamacoes {
 
 function mostrar_reclamacoes {
     # imprime as reclamacoes com os filtros, mostrando quais estão aplicados
-    echo "$conteudo" | tail -n +2
+    #echo "$conteudo" | tail -n +2 ( obsoleto )
+    cat "$arquivo_temp" | tail -n +2
     echo "+++ Arquivo atual: $arquivo_atual"
     echo "+++ Filtros atuais:"
     local string_filtros=""
@@ -189,7 +189,7 @@ function mostrar_duracao_media_reclamacao {
     # altera separador do select (de " " para "\n")
     IFS=$'\n'
     # loop que percorre as linhas do conteúdo
-    for linha in $(echo "$conteudo" | tail -n +2 ); do
+    for linha in $(cat "$arquivo_temp" | tail -n +2 ); do
         
         # utilizando o awk para capturar as colunas que contém as datas de parecer e abertura
         data_abertura=$(echo "$linha" | awk -F';' '{print $1}' )
@@ -325,7 +325,7 @@ arquivo_atual="arquivocompleto.csv"
 # variável que representa o caminho do arquivo atual selecionado
 caminho_arquivo_atual="$diretorio_dados/$arquivo_atual"
 # variável onde todo o conteúdo desejado fica armazenado
-conteudo=$(< $caminho_arquivo_atual)
+# conteudo=$(< $caminho_arquivo_atual) (obsoleto)
 # arquivo de texto onde todo o conteúdo desejado fica armazenado
 cat $caminho_arquivo_atual > "arquivo_temp.txt"
 arquivo_temp="arquivo_temp.txt"
