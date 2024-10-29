@@ -51,7 +51,6 @@ function adicionar_filtro_coluna {
         # pega o índice da coluna que se deseja filtrar
         local indice_coluna=$(head -n 1 $caminho_arquivo_atual | tr ";" '\n' | nl | grep $coluna | awk '{print $1}')
         # remove todas as colunas da linha, exceto a coluna a ser filtrada, depois retorna apenas os valores únicos dessas linhas (dessa coluna)
-<<<<<<< HEAD
         
         # seleção das categorias, com tratamento caso seja a última coluna (tr -d '\r')
         local categorias="$(cut -d';' -f"$indice_coluna" 'arquivo_temp.txt' | tail -n +2 | sort | uniq | tr -d '\r')"
@@ -60,17 +59,6 @@ function adicionar_filtro_coluna {
         string_coluna=$(echo "$coluna" | tr -d '\r\n')
         echo "Escolha uma opção de valor para $string_coluna:"
 
-=======
-        # cria arquivo temporário com a variável conteudo, de forma a evitar problemas de memória
-
-        # echo "$conteudo" > conteudo_temp.txt ( obsoleto )
-        local categorias="$(cut -d';' -f"$indice_coluna" 'arquivo_temp.txt' | tail -n +2 | sort | uniq)"
-        #rm conteudo_temp.txt ( obsoleto ) 
-
-        # altera separador do select (de ";" para quebra de linha)
-        IFS=$'\n'
-        echo "Escolha uma opção de valor para $coluna:"
->>>>>>> 9c09316041b18d7a50e230b4222ba839482e4cd6
         select categoria in $categorias; do
             # adiciona o filtro ao vetor de filtros
             vetor_filtros["$string_coluna"]="$categoria"
@@ -122,11 +110,6 @@ function limpar_filtros_colunas {
 declare -A vetor_filtros=()
 # função que extrai e guarda o conteúdo filtrado
 function filtrar {
-<<<<<<< HEAD
-=======
-
-    #conteudo=$(cat "$caminho_arquivo_atual") ( obsoleto )
->>>>>>> 9c09316041b18d7a50e230b4222ba839482e4cd6
     cabecalho=$( head -n 1 "$caminho_arquivo_atual")
     > filtrar_temp.txt
     > filtrar_temp2.txt
@@ -342,13 +325,6 @@ menu_inicial="selecionar_arquivo adicionar_filtro_coluna limpar_filtros_colunas 
 arquivo_atual="arquivocompleto.csv"
 # variável que representa o caminho do arquivo atual selecionado
 caminho_arquivo_atual="$diretorio_dados/$arquivo_atual"
-<<<<<<< HEAD
-=======
-# variável onde todo o conteúdo desejado fica armazenado
-
-# conteudo=$(< $caminho_arquivo_atual) (obsoleto)
-
->>>>>>> 9c09316041b18d7a50e230b4222ba839482e4cd6
 # arquivo de texto onde todo o conteúdo desejado fica armazenado
 cat $caminho_arquivo_atual > "arquivo_temp.txt"
 arquivo_temp="arquivo_temp.txt"
